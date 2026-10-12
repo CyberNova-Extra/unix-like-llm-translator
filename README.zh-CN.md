@@ -67,6 +67,7 @@ cat file.txt | translate | less     # 管道组合
 translate --to en "你好"            # 强制目标语言
 translate --model /path/to.gguf "…" # 指定模型（或环境变量 QWEN_TRANSLATE_MODEL）
 translate --gpu-layers 0 "…"        # 强制纯 CPU
+translate --threads 4 "…"           # CPU 推理线程数（默认每核一个；或环境变量 TRANSLATE_THREADS）
 translate --model-source huggingface "…"  # 自动下载走 HuggingFace（默认 modelscope）
 translate --log-level info "…"           # 显示 llama.cpp 内部日志（默认 warn，静默）
 

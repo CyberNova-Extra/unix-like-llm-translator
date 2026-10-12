@@ -81,6 +81,7 @@ translate --image shot.png -x 10 -y 20 -w 300 -h 200     # translate a region on
 
 translate --model /path/to.gguf "…"  # custom model (or QWEN_TRANSLATE_MODEL)
 translate --gpu-layers 0 "…"         # force CPU
+translate --threads 4 "…"            # CPU threads (default: one per core; or TRANSLATE_THREADS)
 translate --model-source huggingface "…" # download via HuggingFace (default: modelscope)
 translate --log-level info "…"       # llama.cpp internals (default: warn, quiet)
 ```

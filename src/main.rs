@@ -5,6 +5,7 @@ mod logging;
 mod native_host;
 
 use std::io::{IsTerminal, Read, Write};
+use std::num::NonZeroU32;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -54,6 +55,10 @@ struct Args {
     /// Layers to offload to the GPU (falls back to CPU when unavailable)
     #[arg(long, default_value_t = 999)]
     gpu_layers: u32,
+
+    /// CPU threads for inference (default: one per core)
+    #[arg(long, env = "TRANSLATE_THREADS")]
+    threads: Option<NonZeroU32>,
 
     /// llama.cpp log level
     #[arg(long, value_enum, default_value = "warn")]
@@ -186,7 +191,7 @@ fn run() -> Result<()> {
     if args.native_host {
         return native_host::run(|| {
             ensure_model(&model, model_explicit, args.model_source)?;
-            Translator::load(&model, args.gpu_layers)
+            Translator::load(&model, args.gpu_layers, args.threads)
         });
     }
 
@@ -199,7 +204,8 @@ fn run() -> Result<()> {
         if !mmproj.is_file() {
             download::download_mmproj(&mmproj, args.model_source)?;
         }
-        let mut translator = Translator::load_vision(&model, &mmproj, args.gpu_layers)?;
+        let mut translator =
+            Translator::load_vision(&model, &mmproj, args.gpu_layers, args.threads)?;
         let region = match (args.x, args.y, args.w, args.h) {
             (Some(x), Some(y), Some(w), Some(h)) => Some((x, y, w, h)),
             _ => None,
@@ -228,7 +234,7 @@ fn run() -> Result<()> {
     }
 
     ensure_model(&model, model_explicit, args.model_source)?;
-    let translator = Translator::load(&model, args.gpu_layers)?;
+    let translator = Translator::load(&model, args.gpu_layers, args.threads)?;
     let target = args
         .to
         .unwrap_or_else(|| default_target(source.unwrap_or_else(|| Lang::detect(text))));
