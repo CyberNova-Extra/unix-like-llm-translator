@@ -1,5 +1,6 @@
 mod download;
 mod infer;
+mod input;
 mod logging;
 mod native_host;
 
@@ -213,9 +214,9 @@ fn run() -> Result<()> {
     let text = if !args.text.is_empty() {
         args.text.join(" ")
     } else if !std::io::stdin().is_terminal() {
-        let mut buf = String::new();
-        std::io::stdin().read_to_string(&mut buf)?;
-        buf
+        let mut buf = Vec::new();
+        std::io::stdin().read_to_end(&mut buf)?;
+        input::decode(buf)
     } else {
         no_input();
     };
