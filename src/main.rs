@@ -184,9 +184,10 @@ fn run() -> Result<()> {
     let source = args.from.resolve();
 
     if args.native_host {
-        ensure_model(&model, model_explicit, args.model_source)?;
-        let translator = Translator::load(&model, args.gpu_layers)?;
-        return native_host::run(&translator);
+        return native_host::run(|| {
+            ensure_model(&model, model_explicit, args.model_source)?;
+            Translator::load(&model, args.gpu_layers)
+        });
     }
 
     if let Some(image_path) = &args.image {
