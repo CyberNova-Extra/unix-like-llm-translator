@@ -8,11 +8,12 @@ MMPROJ_NAME="${MMPROJ_NAME:-mmproj-F16.gguf}"
 REPO="${MODEL_REPO:-unsloth/Qwen3.5-0.8B-GGUF}"
 SOURCE="${MODEL_SOURCE:-modelscope}"
 
-if [[ "$(uname)" == "Darwin" ]]; then
-  DEST_DIR="$HOME/Library/Application Support/qwen-translate"
-else
-  DEST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/qwen-translate"
-fi
+case "$(uname -s)" in
+  Darwin) DEST_DIR="$HOME/Library/Application Support/qwen-translate" ;;
+  # Git Bash / MSYS2 / Cygwin on Windows: %LOCALAPPDATA%\qwen-translate
+  MINGW* | MSYS* | CYGWIN*) DEST_DIR="$(cygpath -u "$LOCALAPPDATA")/qwen-translate" ;;
+  *) DEST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/qwen-translate" ;;
+esac
 mkdir -p "$DEST_DIR"
 
 download_one() {
