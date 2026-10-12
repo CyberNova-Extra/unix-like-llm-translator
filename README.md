@@ -18,7 +18,7 @@ translate --image screenshot.png                    # image translation (multimo
 - Image translation via `--image` with optional region cropping (`-x/-y/-w/-h`, long forms `--width`/`--height`)
 - GPU when available (Vulkan / CUDA / Metal), silent CPU fallback otherwise
 - stdout carries results only; logs and errors go to stderr
-- Optional Firefox extension: right-click "Translate selection" backed by the same binary
+- Optional Firefox / Chrome extensions: right-click "Translate selection" backed by the same binary
 
 ## Install
 
@@ -98,22 +98,27 @@ Model lookup order (first hit wins):
 
 Pre-download or switch quants with `scripts/download-model.sh` (`MODEL_SOURCE` / `MODEL_REPO` / `MODEL_NAME` env overrides).
 
-## Firefox extension
+## Browser extensions (Firefox / Chrome)
 
-1. Install the native messaging host manifest:
+Right-click "翻译选中内容" (translate selection) on any page; a floating panel next to the selection shows the translation (copyable). Firefox uses `firefox/`, Chrome and other Chromium browsers (Edge, Brave, Vivaldi, …) use `chrome/`; both talk to the same binary.
+
+1. Install the native messaging host manifests (Firefox + every Chromium browser found):
 
    ```bash
    scripts/install-native-host.sh
    ```
 
-2. Firefox → `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on" → pick `firefox/manifest.json`.
+2. Load the extension:
+   - **Firefox**: `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on" → pick `firefox/manifest.json`.
+   - **Chrome / Edge / Brave**: `chrome://extensions` → enable "Developer mode" → "Load unpacked" → pick the `chrome/` directory. The extension ID is fixed (`bfkmmaobjaldoelkdphajjagomjehbpc`, from the `key` in its manifest), which the host manifest allows.
 
-3. Select text on any page → right-click "翻译选中内容" → a floating panel shows the translation (copyable).
+3. Select text on any page → right-click "翻译选中内容" → the panel shows the translation.
 
 Notes:
-- The extension talks to the binary over a long-lived native-messaging connection; the model stays loaded, so only the first translation pays the load cost.
-- Temporarily loaded extensions vanish on browser restart; reload via about:debugging, or use `web-ext run`.
-- Restricted pages (`about:*`, `addons.mozilla.org`, …) block content scripts — a browser limitation.
+- The extension talks to the binary over a native-messaging connection; the model stays loaded between translations and is released after 5 idle minutes.
+- The panel script is injected only into the page (frame) you right-click, via `activeTab` — no access to all sites is requested.
+- Temporarily loaded Firefox add-ons vanish on browser restart; reload via about:debugging, or use `web-ext run`.
+- Restricted pages (`about:*`, `chrome://*`, extension stores, …) can't be scripted — a browser limitation.
 - Firefox's built-in translation exposes no API for third-party engines, hence the context-menu + panel approach.
 
 ## CI/CD
@@ -124,8 +129,10 @@ Notes:
 ## Uninstall
 
 ```bash
-rm ~/.mozilla/native-messaging-hosts/qwen_translate.json   # Linux
-rm -rf ~/.local/share/qwen-translate                        # model & wrapper
+rm ~/.mozilla/native-messaging-hosts/qwen_translate.json         # Linux, Firefox
+rm ~/.config/*/NativeMessagingHosts/qwen_translate.json           # Linux, Chrome/Chromium/Edge/Vivaldi
+rm ~/.config/BraveSoftware/*/NativeMessagingHosts/qwen_translate.json  # Linux, Brave
+rm -rf ~/.local/share/qwen-translate                              # model & wrapper
 rm ~/.local/bin/translate
 ```
 
