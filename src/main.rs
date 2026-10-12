@@ -28,7 +28,8 @@ const FIREFOX_ADDON_ID: &str = "qwen-translate@local";
         Input: command-line arguments take precedence, otherwise stdin is read (pipe-friendly).\n\
         Image translation: pass an image via --image; -x/-y/-w/-h crop the region to translate.\n\
         Model lookup order: --model / env var > user data dir > model/ next to the executable\n\
-        > /usr/local/share, /usr/share (macOS also /opt/homebrew/share; Windows %ProgramData%);\n\
+        > /usr/local/share, /usr/share (macOS also /opt/homebrew/share; Windows %ProgramData%;\n\
+        Android/Termux $PREFIX/share);\n\
         auto-downloads to the user data dir when not found anywhere.\n\
         stdout carries only results; logs and errors go to stderr.\n\n\
         Examples:\n  \
@@ -58,7 +59,7 @@ struct Args {
     #[arg(long, default_value_t = 999)]
     gpu_layers: u32,
 
-    /// CPU threads for inference (default: one per core)
+    /// CPU threads for inference (default: one per core; half of them on Android)
     #[arg(long, env = "TRANSLATE_THREADS")]
     threads: Option<NonZeroU32>,
 
@@ -119,6 +120,11 @@ fn system_paths(file: &str) -> Vec<PathBuf> {
         dirs.extend(
             std::env::var_os("ProgramData").map(|d| PathBuf::from(d).join("qwen-translate")),
         );
+    } else if cfg!(target_os = "android") {
+        // Termux keeps its "/usr" under the app's private data dir
+        let prefix = std::env::var_os("PREFIX")
+            .map_or_else(|| PathBuf::from("/data/data/com.termux/files/usr"), PathBuf::from);
+        dirs.push(prefix.join("share/qwen-translate"));
     } else if cfg!(target_os = "macos") {
         // Apple Silicon Homebrew / Intel Homebrew & manual installs / system packages
         dirs.extend(
