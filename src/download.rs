@@ -33,7 +33,7 @@ impl ModelSource {
     }
 }
 
-/// Download the model via the system curl (its progress bar goes to stderr, keeping stdout clean).
+/// Download the model via the system curl.
 pub fn download_model(dest: &Path, source: ModelSource) -> Result<()> {
     download_file(dest, source, DEFAULT_FILE)
 }
@@ -46,17 +46,18 @@ pub fn download_mmproj(dest: &Path, source: ModelSource) -> Result<()> {
 fn download_file(dest: &Path, source: ModelSource, file: &str) -> Result<()> {
     let dir = dest.parent().expect("model path has no parent directory");
     std::fs::create_dir_all(dir)?;
+    // A partial download is kept here and resumed on the next attempt / run
     let tmp = dest.with_extension("gguf.tmp");
 
     let mut tried = Vec::new();
     for url in source.urls(DEFAULT_REPO, file) {
         eprintln!("Downloading: {url}");
-        let status = Command::new("curl")
-            .args(["-fL", "--connect-timeout", "15", "-o"])
-            .arg(&tmp)
-            .arg(&url)
-            .status()
-            .context("failed to execute curl (please install curl first)")?;
+        let mut status = curl(&tmp, &url, true)?;
+        // curl exit 33: server ignores Range; start over from scratch
+        if status.code() == Some(33) {
+            let _ = std::fs::remove_file(&tmp);
+            status = curl(&tmp, &url, false)?;
+        }
         if status.success() {
             std::fs::rename(&tmp, dest)?;
             eprintln!("Downloaded: {}", dest.display());
@@ -64,6 +65,24 @@ fn download_file(dest: &Path, source: ModelSource, file: &str) -> Result<()> {
         }
         tried.push(url);
     }
-    let _ = std::fs::remove_file(&tmp);
-    bail!("download failed (tried: {})", tried.join(", "))
+    bail!(
+        "download failed (tried: {}); rerun to resume the partial download",
+        tried.join(", ")
+    )
+}
+
+/// Run the system curl (progress bar on stderr, stdout stays clean). Transient
+/// network errors are retried, and an existing partial file is resumed.
+fn curl(out: &Path, url: &str, resume: bool) -> Result<std::process::ExitStatus> {
+    let mut cmd = Command::new("curl");
+    cmd.args(["-fL", "--connect-timeout", "15"])
+        .args(["--retry", "3", "--retry-delay", "2"]);
+    if resume {
+        cmd.args(["-C", "-"]);
+    }
+    cmd.arg("-o")
+        .arg(out)
+        .arg(url)
+        .status()
+        .context("failed to execute curl (please install curl first)")
 }
