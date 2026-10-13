@@ -164,7 +164,63 @@ Model lookup order (first hit wins):
 4. System dirs: `/usr/local/share/qwen-translate/`, `/usr/share/qwen-translate/` (plus `/opt/homebrew/share/qwen-translate/` on macOS; `%ProgramData%\qwen-translate\` on Windows) — where model-bundled packages install
 5. Otherwise auto-downloads to the user data dir (ModelScope by default)
 
-Pre-download or switch quants with `scripts/download-model.sh` (`MODEL_SOURCE` / `MODEL_REPO` / `MODEL_NAME` env overrides).
+Pre-download or switch variants with `scripts/download-model.sh` (`VARIANT=default/fast/quality`, `MODEL_SOURCE`, `MODEL_REPO` env overrides).
+
+## Recipes
+
+The binary is a plain filter, so it composes with anything. A few setups worth stealing:
+
+### Selection translation popup (KDE global shortcut)
+
+Save as `/usr/local/bin/selection-translation` (or anywhere) and `chmod +x`:
+
+```bash
+#!/bin/bash
+text=$(wl-paste --primary --no-newline 2>/dev/null)              # Wayland
+[ -z "$text" ] && text=$(xsel --primary --output 2>/dev/null)    # X11 fallback
+result=$(echo "$text" | translate 2>/tmp/translate.err)
+if [ $? -ne 0 ]; then
+    notify-send "Translation failed" "$(cat /tmp/translate.err)"
+else
+    notify-send "Translation" "$result" --expire-time=15000
+fi
+```
+
+Bind it in KDE: System Settings → Shortcuts → Custom Shortcuts → New → Global Shortcut → Command/URL, trigger e.g. `Meta+T`, command `/usr/local/bin/selection-translation`. Select text anywhere, hit the shortcut, get the translation as a notification (on failure you get the stderr message instead). GNOME: Settings → Keyboard → Custom Shortcuts, same idea. On macOS swap `wl-paste`/`xsel` for `pbpaste`. Tip: add `--fast` if you want the popup quicker.
+
+### Screenshot-to-clipboard image translation
+
+Take a screenshot into the clipboard (Spectacle, `grim -g "$(slurp)" - | wl-copy`, …), then:
+
+```bash
+wl-paste > /tmp/shot.png && translate --image /tmp/shot.png
+```
+
+### Vim / Neovim: translate the visual selection
+
+```
+:'<,'>!translate
+```
+
+### Translate a file, in place or into a new one
+
+```bash
+translate < notes.md | sponge notes.md      # in place (sponge from moreutils)
+translate < README.md > README.zh.md        # into a new file
+```
+
+### Translate other programs' output
+
+```bash
+./some-app --help | translate
+make 2>&1 | translate                       # stderr included
+```
+
+### Auto-translate whatever you copy (Wayland)
+
+```bash
+wl-paste --watch sh -c 't=$(translate --fast 2>/dev/null) && [ -n "$t" ] && notify-send Translation "$t" --expire-time=8000'
+```
 
 ## Exit codes
 

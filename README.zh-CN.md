@@ -164,7 +164,63 @@ Windows PowerShell 5.1 默认以 ASCII 向外部程序传管道、以 OEM 代码
 4. 系统目录：`/usr/local/share/qwen-translate/`、`/usr/share/qwen-translate/`（macOS 额外含 Homebrew 前缀 `/opt/homebrew/share/qwen-translate/`；Windows 为 `%ProgramData%\qwen-translate\`）——带模型的安装包就装在这里
 5. 都没有 → 自动下载到用户数据目录（默认 ModelScope）
 
-手动预下载/换变体：`scripts/download-model.sh`（支持 `VARIANT=default/fast/quality`、`MODEL_SOURCE` 环境变量）。
+手动预下载/换变体：`scripts/download-model.sh`（支持 `VARIANT=default/fast/quality`、`MODEL_SOURCE`、`MODEL_REPO` 环境变量）。
+
+## 玩法
+
+二进制就是一个普通过滤器，和什么都能组合。几个值得抄的玩法：
+
+### 划词翻译弹窗（KDE 全局快捷键）
+
+保存为 `/usr/local/bin/selection-translation`（或任意位置）并 `chmod +x`：
+
+```bash
+#!/bin/bash
+text=$(wl-paste --primary --no-newline 2>/dev/null)              # Wayland
+[ -z "$text" ] && text=$(xsel --primary --output 2>/dev/null)    # X11 兜底
+result=$(echo "$text" | translate 2>/tmp/translate.err)
+if [ $? -ne 0 ]; then
+    notify-send "翻译失败" "$(cat /tmp/translate.err)"
+else
+    notify-send "翻译" "$result" --expire-time=15000
+fi
+```
+
+KDE 绑定：系统设置 → 快捷键 → 自定义快捷键 → 新建 → 全局快捷键 → 命令/URL，触发键比如 `Meta+T`，命令填 `/usr/local/bin/selection-translation`。之后在任何应用里选中文字、按快捷键，译文以通知弹出（失败则弹出 stderr 里的报错）。GNOME：设置 → 键盘 → 自定义快捷键，同理。macOS 上把 `wl-paste`/`xsel` 换成 `pbpaste`。提示：加 `--fast` 弹窗更快。
+
+### 剪贴板截图翻译
+
+先截图到剪贴板（Spectacle、`grim -g "$(slurp)" - | wl-copy` 等），然后：
+
+```bash
+wl-paste > /tmp/shot.png && translate --image /tmp/shot.png
+```
+
+### Vim / Neovim：翻译可视选区
+
+```
+:'<,'>!translate
+```
+
+### 翻译文件：原地或输出到新文件
+
+```bash
+translate < notes.md | sponge notes.md      # 原地翻译（sponge 来自 moreutils）
+translate < README.md > README.zh.md        # 输出到新文件
+```
+
+### 翻译其他程序的输出
+
+```bash
+./some-app --help | translate
+make 2>&1 | translate                       # 连 stderr 一起翻译
+```
+
+### 复制即翻译（Wayland）
+
+```bash
+wl-paste --watch sh -c 't=$(translate --fast 2>/dev/null) && [ -n "$t" ] && notify-send 翻译 "$t" --expire-time=8000'
+```
 
 ## 退出码
 
