@@ -1,13 +1,17 @@
 package local.qwentranslate;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.graphics.Insets;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -30,6 +34,7 @@ import java.util.List;
 public final class TerminalActivity extends Activity implements Session.Listener {
     private static final float MIN_TEXT_SP = 8;
     private static final float MAX_TEXT_SP = 32;
+    private static final int REQUEST_IMAGE = 1;
 
     private Session session;
     private SharedPreferences prefs;
@@ -122,12 +127,70 @@ public final class TerminalActivity extends Activity implements Session.Listener
         addKey(keys, R.string.key_interrupt, () -> session.interrupt());
         addKey(keys, R.string.key_up, () -> browseHistory(-1));
         addKey(keys, R.string.key_down, () -> browseHistory(1));
+        addKey(keys, R.string.key_image, this::pickImage);
         addKey(keys, R.string.key_paste, this::paste);
         addKey(keys, R.string.key_copy, this::copyResult);
         addKey(keys, R.string.key_clear, () -> session.clear());
         addKey(keys, R.string.key_help, () -> run("help"));
 
         input.requestFocus();
+        // Not again when recreated: the request was handled already
+        if (state == null) handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    /** Text selected in another app ("Qwen Translate" in its menu), or shared text / image. */
+    private void handleIntent(Intent intent) {
+        String action = intent.getAction();
+        if (Intent.ACTION_PROCESS_TEXT.equals(action)) {
+            CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT);
+            if (text != null) {
+                follow = true;
+                session.translate(text.toString());
+            }
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            String type = intent.getType();
+            Uri image = type != null && type.startsWith("image/") ? sharedStream(intent) : null;
+            CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+            follow = true;
+            if (image != null) session.translateImage(image);
+            else if (text != null) session.translate(text.toString());
+        }
+    }
+
+    @SuppressWarnings("deprecation") // the typed variant needs Android 13
+    private static Uri sharedStream(Intent intent) {
+        return Build.VERSION.SDK_INT >= 33
+                ? intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri.class)
+                : intent.getParcelableExtra(Intent.EXTRA_STREAM);
+    }
+
+    private void pickImage() {
+        // The photo picker needs no storage permission; older versions use a document picker
+        Intent pick = Build.VERSION.SDK_INT >= 33
+                ? new Intent(MediaStore.ACTION_PICK_IMAGES)
+                : new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
+        try {
+            startActivityForResult(pick, REQUEST_IMAGE);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, R.string.no_image_picker, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation") // the framework Activity has no result API besides this one
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request == REQUEST_IMAGE && result == RESULT_OK && data != null && data.getData() != null) {
+            follow = true;
+            session.translateImage(data.getData());
+        }
     }
 
     @Override

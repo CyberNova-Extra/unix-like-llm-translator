@@ -3,6 +3,7 @@ package local.qwentranslate;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.SpannableStringBuilder;
@@ -126,6 +127,7 @@ final class Session {
             }
         });
         load();
+        Images.cleanUp(app);
         term.write(app.getString(R.string.welcome), TerminalBuffer.INFO);
     }
 
@@ -162,6 +164,18 @@ final class Session {
     void translate(String text) {
         String t = text.trim();
         if (!t.isEmpty()) enqueue(new Pending(t, null, Arrays.asList("--", t)));
+    }
+
+    /** Translates the image behind {@code uri} (shared, or picked with the IMAGE key). */
+    void translateImage(Uri uri) {
+        new Thread(() -> {
+            try {
+                File image = Images.importImage(app, uri);
+                main.post(() -> run(Arrays.asList("--image", image.getPath())));
+            } catch (IOException | RuntimeException e) {
+                main.post(() -> error(app.getString(R.string.image_failed, e.getMessage())));
+            }
+        }, "image-import").start();
     }
 
     /** Runs translate with these arguments, shown as a command line. */
@@ -373,7 +387,7 @@ final class Session {
         term.write(msg.endsWith("\n") ? msg : msg + "\n", TerminalBuffer.INFO);
     }
 
-    private void error(String msg) {
+    void error(String msg) {
         term.ensureNewline();
         term.write(msg + "\n", TerminalBuffer.ERROR);
     }
