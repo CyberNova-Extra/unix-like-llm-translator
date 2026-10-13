@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   build:
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -143,6 +144,7 @@ jobs:
           compression-level: 0
 
   android:
+    timeout-minutes: 90
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -226,6 +228,7 @@ jobs:
           compression-level: 0
 
   extension:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

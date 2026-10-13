@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -85,6 +86,7 @@ jobs:
           python tests/native_host_smoke.py "$exe"
 
   android:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,6 +125,7 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
 
   extension:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
