@@ -5,7 +5,7 @@ mod input;
 mod logging;
 mod native_host;
 
-use std::io::{IsTerminal, Read, Write};
+use std::io::{BufRead, IsTerminal, Read, Write};
 use std::num::NonZeroU32;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -29,7 +29,8 @@ const FIREFOX_ADDON_ID: &str = "qwen-translate@local";
     disable_help_flag = true,
     about = "Local offline translation with Qwen3.5 (text and images)",
     long_about = "Local offline translation with Qwen3.5 (text and images).\n\n\
-        Input: command-line arguments take precedence, otherwise stdin is read (pipe-friendly).\n\
+        Input: command-line arguments take precedence, otherwise stdin is read (pipe-friendly);\n\
+        run in a terminal without either, it translates each line typed (interactive mode).\n\
         Image translation: pass an image via --image; -x/-y/-w/-h crop the region to translate.\n\
         Models: 2B by default; --fast/--quality (or --model fast/quality) switch to 0.8B/4B.\n\
         Model lookup order: --model / env var > user data dir > model/ next to the executable\n\
@@ -132,7 +133,7 @@ struct Args {
     #[arg(long, action = clap::ArgAction::HelpLong)]
     help: Option<bool>,
 
-    /// Text to translate (read from stdin when omitted)
+    /// Text to translate (read from stdin when omitted; interactive in a terminal)
     text: Vec<String>,
 }
 
@@ -417,7 +418,7 @@ fn run() -> Result<()> {
         std::io::stdin().read_to_end(&mut buf)?;
         input::decode(buf)
     } else {
-        no_input();
+        return interactive(&args, &choice, model_source, source);
     };
 
     let text = text.trim();
@@ -431,6 +432,46 @@ fn run() -> Result<()> {
     let (source, target) = resolve_direction(text, source, args.to);
     let out = translator.translate(text, source, target, !args.no_stream)?;
     print_result(&out, !args.no_stream)
+}
+
+/// `translate` alone in a terminal: translate each line typed until end of input,
+/// with the model loaded once (a REPL, like the Android app's terminal starts).
+/// Prompts and hints go to stderr, so stdout still carries translations only.
+fn interactive(
+    args: &Args,
+    choice: &ModelChoice,
+    model_source: ModelSource,
+    source: Option<Lang>,
+) -> Result<()> {
+    ensure_model(choice, model_source)?;
+    eprintln!("Loading {}…", choice.path.display());
+    let translator = Translator::load(&choice.path, args.gpu_layers, args.threads)
+        .map_err(|e| err::or_kind(e, AppError::Model))?;
+    let mut session = translator.text_session()?;
+    let eof = if cfg!(windows) { "Ctrl+Z, Enter" } else { "Ctrl+D" };
+    eprintln!("Type text and press Enter to translate it; {eof} to quit.");
+    let mut stdin = std::io::stdin().lock();
+    let mut line = Vec::new();
+    loop {
+        eprint!("> ");
+        line.clear();
+        if stdin.read_until(b'\n', &mut line)? == 0 {
+            eprintln!();
+            return Ok(());
+        }
+        let text = input::decode(std::mem::take(&mut line));
+        let text = text.trim();
+        if text.is_empty() {
+            continue;
+        }
+        let (from, to) = resolve_direction(text, source, args.to);
+        match session.translate(text, from, to, !args.no_stream) {
+            Ok(out) => print_result(&out, !args.no_stream)?,
+            Err(e) if is_broken_pipe(&e) => return Err(e),
+            // One bad line shouldn't end the session
+            Err(e) => eprintln!("error: {e:#}"),
+        }
+    }
 }
 
 /// The reader of streamed output went away (e.g. `| head`): normal for a filter

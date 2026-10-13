@@ -130,6 +130,7 @@ translate "I love programming"       # arguments -> Chinese
 echo "我喜欢编程" | translate         # stdin pipe -> English
 translate < file.txt                 # file redirect
 cat file.txt | translate | less      # pipelines compose
+translate                            # in a terminal: interactive, one translation per line
 
 translate --to ja "你好"             # pick a target language
 translate --from ru --to zh "Привет" # pick a source language (default: auto)
@@ -150,7 +151,7 @@ translate --model-source huggingface "…" # download via HuggingFace (default: 
 translate --log-level info "…"       # llama.cpp internals (default: warn, quiet)
 ```
 
-Arguments win over stdin; with neither, you get the help text. Decoding is greedy (deterministic).
+Arguments win over stdin. Run in a terminal with neither, `translate` is interactive: it translates each line you type, keeping the model loaded in between (Ctrl+D, or Ctrl+Z then Enter on Windows, to quit; prompts go to stderr). Decoding is greedy (deterministic).
 stdin may be UTF-8 (with or without BOM) or UTF-16 with BOM; on Windows, input in the console code page (e.g. `echo 你好 | translate` in cmd.exe with GBK) is decoded too.
 In Windows PowerShell 5.1, pipes to native programs are ASCII-encoded by default and captured output is decoded with the OEM code page; run `$OutputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new()` first. PowerShell 7 pipes UTF-8 already but still decodes captured output with the console code page, so set `[Console]::OutputEncoding` there too. Output shown directly in the console is always correct.
 The model runs in non-thinking mode (Qwen3.5-0.8B is non-thinking by default; `/no_think` is not supported).

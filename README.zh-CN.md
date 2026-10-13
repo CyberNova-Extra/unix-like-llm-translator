@@ -130,6 +130,7 @@ translate "I love programming"       # 参数传入 → 译成中文
 echo "我喜欢编程" | translate         # stdin 管道 → 译成英文
 translate < file.txt                 # 文件重定向
 cat file.txt | translate | less      # 管道组合
+translate                            # 在终端中直接运行：交互模式，逐行翻译
 
 translate --to ja "你好"             # 指定目标语言
 translate --from ru --to zh "Привет" # 指定源语言（默认 auto 自动检测）
@@ -150,7 +151,7 @@ translate --model-source huggingface "…" # 自动下载走 HuggingFace（默�
 translate --log-level info "…"       # 显示 llama.cpp 内部日志（默认 warn，静默）
 ```
 
-参数与 stdin 同时存在时优先用参数；两者都没有时打印帮助。解码为贪心策略（确定性输出）。
+参数与 stdin 同时存在时优先用参数。两者都没有且在终端中运行时进入交互模式：输入一行翻译一行，模型只加载一次（Ctrl+D 退出，Windows 为 Ctrl+Z 后回车；提示符输出到 stderr）。解码为贪心策略（确定性输出）。
 stdin 支持 UTF-8（可带 BOM）与带 BOM 的 UTF-16；Windows 下控制台代码页编码的输入（如 GBK 环境的 cmd 中 `echo 你好 | translate`）也能正确识别。
 Windows PowerShell 5.1 默认以 ASCII 向外部程序传管道、以 OEM 代码页解码捕获的输出，使用前先执行 `$OutputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new()`。PowerShell 7 管道默认已是 UTF-8，但捕获输出仍按控制台代码页解码，同样需要设置 `[Console]::OutputEncoding`。直接显示在控制台的输出始终正常。
 模型运行在非思考模式（Qwen3.5 本身即默认非思考，不支持 /no_think 软开关）。
