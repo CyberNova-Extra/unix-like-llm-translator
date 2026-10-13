@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = 'qwen-translate'
-include ':app'
+include ':app', ':terminal-emulator', ':terminal-view'

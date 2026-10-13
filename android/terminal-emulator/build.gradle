@@ -1,0 +1,28 @@
+// Termux's terminal emulator (see README.md here). The JNI part, src/main/jni/termux.c,
+// is compiled by scripts/build-android-app.sh into the app as libtermux.so.
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace = 'com.termux.terminal'
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 24
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        // The emulator tests run on the JVM, where android.* calls are stubs
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
