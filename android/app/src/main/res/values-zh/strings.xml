@@ -23,6 +23,10 @@
     <string name="welcome">"Qwen 本地翻译 · 终端\n输入文字后回车即可翻译；输入 help 查看命令。\n模型在本机运行，下载后可离线使用。\n"</string>
     <string name="help">"直接输入文字：翻译（中文译为英文，其他语言译为中文）\ntranslate [选项] [文字]：完整命令行，例如\n  translate --to ja 你好\n  translate --fast \"quick test\"（0.8B 快速模型）\n  translate --quality …（4B 高质量模型）\n  translate --image 图片路径（翻译图片中的文字）\n  translate --help（全部选项）\nexport 名称=值 …：设置环境变量，如 TRANSLATE_TO=ja、QWEN_TRANSLATE_MODEL=fast\nunset 名称 … / env：删除 / 列出环境变量\nmodels / models rm 文件名：查看 / 删除已下载的模型\nclear：清屏；exit：关闭\n按键：^C 停止当前命令，↑ ↓ 翻阅历史，图片 = 选一张图片翻译，复制 = 复制上一条译文；双指缩放字号。\n在其他应用中：选中文字后点「Qwen 翻译」，或把文字、图片分享到本应用。\n首次使用时自动下载模型：默认 2B 约 1.3GB，--fast 约 0.5GB，--quality 约 2.7GB；翻译图片另需约 0.2–0.7GB。模型保留到卸载应用为止。\n"</string>
 
+    <string name="notification_channel">运行中的命令</string>
+    <string name="notification_running">正在运行</string>
+    <string name="notification_stop">停止</string>
+
     <string name="binary_missing">APK 中缺少 translate 程序（%s），请用 scripts/build-android-app.sh 构建</string>
     <string name="start_failed">无法启动 translate：%s</string>
     <string name="exit_code">[退出码 %d]</string>

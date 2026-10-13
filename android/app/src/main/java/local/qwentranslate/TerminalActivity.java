@@ -1,11 +1,13 @@
 package local.qwentranslate;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Insets;
 import android.net.Uri;
@@ -35,6 +37,7 @@ public final class TerminalActivity extends Activity implements Session.Listener
     private static final float MIN_TEXT_SP = 8;
     private static final float MAX_TEXT_SP = 32;
     private static final int REQUEST_IMAGE = 1;
+    private static final int REQUEST_NOTIFICATIONS = 2;
 
     private Session session;
     private SharedPreferences prefs;
@@ -213,10 +216,20 @@ public final class TerminalActivity extends Activity implements Session.Listener
 
     @Override
     public void onStateChanged(boolean running, int queued) {
+        if (running) askForNotifications();
         prompt.setAlpha(running ? 0.4f : 1f);
         if (!running) input.setHint(R.string.input_hint);
         else if (queued == 0) input.setHint(R.string.input_hint_running);
         else input.setHint(getResources().getQuantityString(R.plurals.input_hint_queued, queued, queued));
+    }
+
+    /** Android 13+: once, so the notification of a running command can be shown. */
+    private void askForNotifications() {
+        if (Build.VERSION.SDK_INT < 33 || prefs.getBoolean("askedNotifications", false)) return;
+        prefs.edit().putBoolean("askedNotifications", true).apply();
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATIONS);
+        }
     }
 
     @Override

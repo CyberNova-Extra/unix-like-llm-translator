@@ -73,6 +73,8 @@ final class Session {
     private final List<String> history = new ArrayList<>();
     private final ArrayDeque<Pending> queue = new ArrayDeque<>();
     private Process process;
+    /** Prompt line of the input being run, for the notification. */
+    private String running = "";
     private boolean interrupted;
     private final StringBuilder output = new StringBuilder();
     private String lastResult = "";
@@ -149,6 +151,11 @@ final class Session {
         return home;
     }
 
+    /** A command runs or waits. */
+    boolean busy() {
+        return process != null || !queue.isEmpty();
+    }
+
     /** A line typed at the prompt. */
     void submit(String line) {
         String cmd = line.trim();
@@ -213,10 +220,12 @@ final class Session {
     private void drain() {
         while (process == null && !queue.isEmpty()) {
             Pending p = queue.poll();
+            running = p.echo;
             echo(p.echo);
             if (p.line != null) execute(p.line);
             else start(p.args);
         }
+        if (process == null) SessionService.stop();
         stateChanged();
     }
 
@@ -328,6 +337,7 @@ final class Session {
         process = p;
         interrupted = false;
         output.setLength(0);
+        SessionService.start(app, running);
         Thread out = pump(p, p.getInputStream(), TerminalBuffer.NORMAL);
         Thread err = pump(p, p.getErrorStream(), TerminalBuffer.STDERR);
         new Thread(() -> {

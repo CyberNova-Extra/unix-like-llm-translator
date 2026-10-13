@@ -3,6 +3,11 @@
 
     <!-- Model downloads -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- SessionService: keeps a running command alive in the background -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Backups leave out the models: gigabytes that can be downloaded again -->
     <application
@@ -40,5 +45,14 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".SessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Runs the on-device translation model, or downloads it, for a command the user started in the app's terminal" />
+        </service>
     </application>
 </manifest>
