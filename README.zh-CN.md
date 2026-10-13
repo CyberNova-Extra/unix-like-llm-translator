@@ -22,6 +22,7 @@ translate --image screenshot.png                    # 图片翻译（多模态�
 - 有 GPU 用 GPU（Vulkan / CUDA / Metal），没有自动回退 CPU
 - stdout 只输出结果，日志/报错全走 stderr
 - 可选 Firefox / Chrome 扩展：右键「翻译选中内容」，由同一个二进制驱动
+- 支持 Linux、macOS、Windows 与 Android（Termux 风格终端的独立应用，或在 Termux 中使用 CLI）
 
 ## 安装
 
@@ -37,12 +38,23 @@ translate --image screenshot.png                    # 图片翻译（多模态�
 | `qwen-translate-full_*` / `qwen-translate-full-*` | 上述三格式的**带模型**版本（模型装进 `/usr/share/qwen-translate/`，离线可用） |
 | `qwen-translate-*-macos-arm64.tar.xz`（及 `-with-model`） | macOS（Apple Silicon，Metal 加速） |
 | `qwen-translate-*-windows-x86_64.zip`（及 `-with-model`） | Windows 10/11 x64（CPU；静态链接运行库，无需安装 VC++ 运行时） |
+| `qwen-translate-*-android.apk` | Android 应用（Android 7+，arm64；终端风格，无需 Termux；见下文） |
 | `qwen-translate-*-android-aarch64.tar.xz`（及 `-with-model`） | Android aarch64，用于 Termux（CPU；见下文） |
 | `qwen-translate-extension-*-firefox.zip` / `-chrome.zip` / `-chrome.crx` | 浏览器扩展（见「浏览器扩展」一节） |
 
 tar.xz 解压后运行 `scripts/install.sh`（装到 `~/.local/bin`）。macOS 二进制未签名，首次运行前需 `xattr -d com.apple.quarantine ~/.local/bin/translate`。
 
 Windows：解压 zip 后运行 `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`，`translate.exe` 装到 `%LOCALAPPDATA%\Programs\qwen-translate` 并加入用户 PATH（无需管理员权限），包内模型（如有）装到 `%LOCALAPPDATA%\qwen-translate`。也可不安装，直接在解压目录使用（会自动找到 exe 同级 `model\` 中的模型）。
+
+### Android 应用
+
+`qwen-translate-*-android.apk` 是独立的 Android 应用（Android 7+，arm64），界面是 Termux 风格的终端，自带 `translate`，无需安装 Termux：
+
+- 输入文字后回车即翻译；也可运行带任意选项的 `translate`（`translate --to ja 你好`、`translate --fast …`、`translate --help`）。`help` 列出内置命令：`export` / `unset` / `env` 管理环境变量（如 `TRANSLATE_TO=ja`、`QWEN_TRANSLATE_MODEL=fast`，重启后保留），`models` / `models rm 文件名` 查看和删除已下载的模型，`clear`、`exit`。命令运行时输入的内容会像 shell 一样排队等待。
+- 在任意应用中选中文字后，点选择菜单里的 **Qwen 翻译**；也可把文字或图片分享到本应用；「图片」键用于选一张图片翻译其中的文字。
+- 快捷键行：^C（停止）、↑ ↓（历史）、图片、粘贴、复制（上一条译文）、清屏、帮助；双指缩放字号。
+- 首次使用时自动下载模型（支持续传）到应用私有目录：默认 2B（1.3GB），内存较小的手机可 `export QWEN_TRANSLATE_MODEL=fast` 改用 0.8B（0.5GB）。卸载应用时模型一并删除。
+- 命令运行期间会显示带「停止」按钮的通知，切到后台也能继续运行。但 Android 12+ 仍可能终止在后台占用大量 CPU 的进程，发生时应用会给出提示；长文本翻译请保持应用在前台。
 
 ### Android（Termux）
 
@@ -107,6 +119,8 @@ cargo build --release --target aarch64-linux-android
 ```
 
 较新的手机可加 `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod`，推理明显更快，但生成的二进制无法在 Cortex-A53/A73 一代的老 SoC 上运行。
+
+Android 应用用 `scripts/build-android-app.sh` 构建（需要 `ANDROID_NDK` 指向 NDK、`ANDROID_HOME` 指向 Android SDK，以及 JDK 17+）：按给定 ABI（默认 `arm64-v8a`，模拟器可用 `x86_64`）交叉编译 `translate`，作为应用的原生库 `libtranslate.so` 打包（Android 只允许应用执行原生库目录中的文件），输出 `android/app/build/outputs/apk/release/app-release.apk`。设置了 `ANDROID_KEYSTORE`（密码 `ANDROID_KEYSTORE_PASSWORD`，别名 `ANDROID_KEY_ALIAS`，默认 `qwen-translate`）时用该密钥签名，否则用 debug 密钥。
 
 ## 使用
 
@@ -202,8 +216,8 @@ scripts/pack-crx.py chrome path/to/key.pem qwen-translate.crx --zip qwen-transla
 
 ## CI/CD
 
-- **CI**（push / PR）：Ubuntu（Vulkan）+ macOS（Metal）+ Windows（CPU）构建 + 真实推理冒烟测试（文本 + 图片）；Android aarch64 交叉编译检查
-- **CD**（推送 `v*` tag 触发）：构建 Release 资产——各平台 tar.xz / zip（含/不含模型）+ deb / rpm / pacman 安装包（各含/不含模型两种），由单独作业汇总后以**草稿**形式创建 Release，人工确认后发布。仓库配置了 `CRX_PRIVATE_KEY` 密钥（与 `chrome/manifest.json` 中 `key` 对应的 PEM 私钥）时才会签名产出 Chrome `.crx`，否则只发布 zip
+- **CI**（push / PR）：Ubuntu（Vulkan）+ macOS（Metal）+ Windows（CPU）构建 + 真实推理冒烟测试（文本 + 图片）；Android aarch64 交叉编译、APK 构建、应用 lint 与单元测试（APK 作为构件上传）
+- **CD**（推送 `v*` tag 触发）：构建 Release 资产——各平台 tar.xz / zip（含/不含模型）+ deb / rpm / pacman 安装包（各含/不含模型两种），由单独作业汇总后以**草稿**形式创建 Release，人工确认后发布。仓库配置了 `CRX_PRIVATE_KEY` 密钥（与 `chrome/manifest.json` 中 `key` 对应的 PEM 私钥）时才会签名产出 Chrome `.crx`，否则只发布 zip。APK 用 secrets 中的发布密钥签名：`ANDROID_KEYSTORE_BASE64`（keystore 的 base64）和 `ANDROID_KEYSTORE_PASSWORD`（别名不是 `qwen-translate` 时另设 `ANDROID_KEY_ALIAS`）；未配置时使用一次性的 debug 密钥，之后的版本无法覆盖安装
 
 ## 卸载
 
@@ -222,6 +236,8 @@ scripts\install-native-host.ps1 -Uninstall                  # 浏览器注册信
 Remove-Item -Recurse "$env:LOCALAPPDATA\Programs\qwen-translate", "$env:LOCALAPPDATA\qwen-translate"
 # 再从用户 PATH 中删除 %LOCALAPPDATA%\Programs\qwen-translate（设置 → 环境变量）
 ```
+
+Android 应用像其他应用一样卸载即可，模型随之删除。
 
 ## 故障排查
 

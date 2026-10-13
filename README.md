@@ -22,6 +22,7 @@ translate --image screenshot.png                    # image translation (multimo
 - GPU when available (Vulkan / CUDA / Metal), silent CPU fallback otherwise
 - stdout carries results only; logs and errors go to stderr
 - Optional Firefox / Chrome extensions: right-click "Translate selection" backed by the same binary
+- Linux, macOS, Windows and Android (a standalone app with a Termux-style terminal, or the CLI in Termux)
 
 ## Install
 
@@ -37,12 +38,23 @@ Grab an asset from [Releases](https://github.com/TUST-Open-Source-Club/translato
 | `qwen-translate-full_*` / `qwen-translate-full-*` | Same three formats **with the model** (installed to `/usr/share/qwen-translate/`, offline-ready) |
 | `qwen-translate-*-macos-arm64.tar.xz` (and `-with-model`) | macOS (Apple Silicon, Metal-accelerated) |
 | `qwen-translate-*-windows-x86_64.zip` (and `-with-model`) | Windows 10/11 x64 (CPU; static CRT, no runtime to install) |
+| `qwen-translate-*-android.apk` | Android app (Android 7+, arm64; terminal-style, no Termux needed; see below) |
 | `qwen-translate-*-android-aarch64.tar.xz` (and `-with-model`) | Android aarch64 for Termux (CPU; see below) |
 | `qwen-translate-extension-*-firefox.zip` / `-chrome.zip` / `-chrome.crx` | Browser extensions (see [Browser extensions](#browser-extensions-firefox--chrome)) |
 
 For tar.xz, extract and run `scripts/install.sh` (installs to `~/.local/bin`). The macOS binary is unsigned; run `xattr -d com.apple.quarantine ~/.local/bin/translate` once.
 
 On Windows, extract the zip and run `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`: it installs `translate.exe` to `%LOCALAPPDATA%\Programs\qwen-translate` (added to the user PATH; no admin rights needed) and the bundled model, if any, to `%LOCALAPPDATA%\qwen-translate`. The extracted folder also works as-is (the model is found in `model\` next to the exe).
+
+### Android app
+
+`qwen-translate-*-android.apk` is a standalone app (Android 7+, arm64) with a Termux-style terminal. It carries `translate` itself, so Termux isn't needed:
+
+- Type text and press Enter to translate it, or run `translate` with any option (`translate --to ja 你好`, `translate --fast …`, `translate --help`). `help` lists the built-in commands: `export` / `unset` / `env` for environment variables such as `TRANSLATE_TO=ja` or `QWEN_TRANSLATE_MODEL=fast` (kept across launches), `models` / `models rm FILE` for the downloaded models, `clear` and `exit`. Input typed while a command runs waits for it, as in a shell.
+- In any app, select text and choose **Qwen 翻译** / **Qwen Translate** in the selection menu, or share text or an image to the app; the IMAGE key picks a picture whose text to translate.
+- The key row has ^C (stop), ↑ ↓ (history), IMAGE, PASTE, COPY (the last translation), CLEAR and HELP; pinch to zoom the text.
+- Models download on first use (resumable) into the app's private storage: 2B (1.3 GB) by default, or `export QWEN_TRANSLATE_MODEL=fast` for the 0.8B model (0.5 GB) on phones with little RAM. Uninstalling the app removes them.
+- While a command runs, a notification with a Stop button keeps it going in the background. Android 12+ may still kill background processes that use a lot of CPU; the app says so when it happens. Keep it in the foreground for long translations.
 
 ### Android (Termux)
 
@@ -107,6 +119,8 @@ cargo build --release --target aarch64-linux-android
 ```
 
 For newer phones, `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod` speeds up inference considerably, but the binary then no longer runs on older Cortex-A53/A73-class SoCs.
+
+The Android app is built with `scripts/build-android-app.sh` (needs the NDK in `ANDROID_NDK`, the Android SDK in `ANDROID_HOME` and JDK 17+). It cross-compiles `translate` for the ABIs given (`arm64-v8a` by default, `x86_64` for emulators), packs it as the app's native library (`libtranslate.so`: Android only lets apps execute files from their native library directory) and writes `android/app/build/outputs/apk/release/app-release.apk`. The APK is signed with the key in `ANDROID_KEYSTORE` (password `ANDROID_KEYSTORE_PASSWORD`, alias `ANDROID_KEY_ALIAS`, default `qwen-translate`), or else with the debug key.
 
 ## Usage
 
@@ -202,8 +216,8 @@ Notes:
 
 ## CI/CD
 
-- **CI** (push / PR): builds on Ubuntu (Vulkan), macOS (Metal) and Windows (CPU) + real-inference smoke tests (text and image); Android aarch64 cross-compile check
-- **CD** (push a `v*` tag): builds release assets — per-platform tar.xz / zip (with/without model) + deb / rpm / pacman packages (with/without model) — and a single job creates a **draft** GitHub Release for manual review before publishing. The Chrome `.crx` is signed only when the repository secret `CRX_PRIVATE_KEY` (PEM key matching `chrome/manifest.json`'s `key`) is set; otherwise only the zip is published
+- **CI** (push / PR): builds on Ubuntu (Vulkan), macOS (Metal) and Windows (CPU) + real-inference smoke tests (text and image); Android aarch64 cross-compile, APK build, app lint and unit tests (the APK is uploaded as a build artifact)
+- **CD** (push a `v*` tag): builds release assets — per-platform tar.xz / zip (with/without model) + deb / rpm / pacman packages (with/without model) — and a single job creates a **draft** GitHub Release for manual review before publishing. The Chrome `.crx` is signed only when the repository secret `CRX_PRIVATE_KEY` (PEM key matching `chrome/manifest.json`'s `key`) is set; otherwise only the zip is published. The APK is signed with the release key from the secrets `ANDROID_KEYSTORE_BASE64` (the keystore, base64-encoded) and `ANDROID_KEYSTORE_PASSWORD` (plus `ANDROID_KEY_ALIAS` if not `qwen-translate`); without them it gets a throwaway debug key, and later versions can't be installed over it
 
 ## Uninstall
 
@@ -222,6 +236,8 @@ scripts\install-native-host.ps1 -Uninstall                  # browser registrati
 Remove-Item -Recurse "$env:LOCALAPPDATA\Programs\qwen-translate", "$env:LOCALAPPDATA\qwen-translate"
 # then remove %LOCALAPPDATA%\Programs\qwen-translate from the user PATH (Settings → Environment variables)
 ```
+
+The Android app is uninstalled like any other app; its models go with it.
 
 ## Troubleshooting
 
