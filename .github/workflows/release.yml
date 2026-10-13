@@ -160,6 +160,8 @@ jobs:
           export CXX_aarch64_linux_android="$TC/aarch64-linux-android24-clang++"
           export AR_aarch64_linux_android="$TC/llvm-ar"
           export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$TC/aarch64-linux-android24-clang"
+          # NDK r30+ headers reject unversioned targets, which bindgen passes by default
+          export BINDGEN_EXTRA_CLANG_ARGS_aarch64_linux_android="--target=aarch64-linux-android24"
           cargo build --release --target aarch64-linux-android
           "$TC/llvm-strip" target/aarch64-linux-android/release/translate
 

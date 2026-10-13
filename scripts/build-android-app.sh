@@ -15,6 +15,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 API=24
 
 NDK="${ANDROID_NDK:-${ANDROID_NDK_ROOT:-${ANDROID_NDK_HOME:-${ANDROID_NDK_LATEST_HOME:-}}}}"
@@ -44,11 +45,13 @@ for abi in "${ABIS[@]}"; do
   upper="$(printf '%s' "$var" | tr '[:lower:]' '[:upper:]')"
   export "CC_$var=$TC/$target$API-clang" "CXX_$var=$TC/$target$API-clang++" "AR_$var=$TC/llvm-ar"
   export "CARGO_TARGET_${upper}_LINKER=$TC/$target$API-clang"
+  # NDK r30+ headers reject unversioned targets, which bindgen passes by default
+  export "BINDGEN_EXTRA_CLANG_ARGS_$var=--target=$target$API"
   echo "==> translate for $abi ($target)"
   ANDROID_NDK="$NDK" ANDROID_API_LEVEL=$API \
     cargo build --release --target "$target" --manifest-path "$ROOT/Cargo.toml"
   mkdir -p "$JNI/$abi"
-  "$TC/llvm-strip" -o "$JNI/$abi/libtranslate.so" "$ROOT/target/$target/release/translate"
+  "$TC/llvm-strip" -o "$JNI/$abi/libtranslate.so" "$TARGET_DIR/$target/release/translate"
 done
 
 echo "==> APK"

@@ -114,7 +114,8 @@ TC=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
 export CC_aarch64_linux_android=$TC/aarch64-linux-android24-clang \
        CXX_aarch64_linux_android=$TC/aarch64-linux-android24-clang++ \
        AR_aarch64_linux_android=$TC/llvm-ar \
-       CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TC/aarch64-linux-android24-clang
+       CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TC/aarch64-linux-android24-clang \
+       BINDGEN_EXTRA_CLANG_ARGS_aarch64_linux_android=--target=aarch64-linux-android24
 cargo build --release --target aarch64-linux-android
 ```
 
