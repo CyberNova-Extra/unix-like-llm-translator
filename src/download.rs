@@ -85,13 +85,19 @@ fn download_file(dest: &Path, source: ModelSource, repo: &str, file: &str) -> Re
     // curls resuming into one partial file would corrupt it. Take turns (the lock
     // is released when the process exits, so it can't go stale).
     let lock = File::create(dest.with_extension("gguf.lock"))?;
-    if let Err(TryLockError::WouldBlock) = lock.try_lock() {
-        eprintln!(
-            "Waiting for another download of {} to finish…",
-            dest.display()
-        );
+    // Block only when try_lock() failed: locking a handle that already holds the
+    // lock deadlocks on Windows (LockFileEx is not reentrant)
+    match lock.try_lock() {
+        Ok(()) => {}
+        Err(TryLockError::WouldBlock) => {
+            eprintln!(
+                "Waiting for another download of {} to finish…",
+                dest.display()
+            );
+            lock.lock().context("failed to lock the download")?;
+        }
+        Err(TryLockError::Error(e)) => return Err(e).context("failed to lock the download"),
     }
-    lock.lock().context("failed to lock the download")?;
     if dest.is_file() {
         // finished by the other process while we waited
         return Ok(());
