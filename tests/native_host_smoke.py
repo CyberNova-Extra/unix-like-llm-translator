@@ -35,6 +35,9 @@ def exchange(binary, args, requests):
 
 
 def main():
+    # The replies hold Chinese, which a Windows console code page (cp1252 on the
+    # CI runners) can't encode
+    sys.stdout.reconfigure(encoding="utf-8")
     # Absolute, native path: Windows' CreateProcess is picky about "./a/b.exe"
     binary = os.path.abspath(sys.argv[1])
     replies = exchange(
