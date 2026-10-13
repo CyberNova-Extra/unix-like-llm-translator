@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A prompt: chevron and cursor, inside the adaptive icon's safe zone -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M36,38 L52,54 L36,70"
+        android:strokeColor="@color/icon_fg"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M58,70 L74,70"
+        android:strokeColor="@color/icon_fg"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+</vector>

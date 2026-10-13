@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Terminal" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/term_bg</item>
+        <item name="android:statusBarColor">@color/term_bg</item>
+        <item name="android:navigationBarColor">@color/term_bg</item>
+        <item name="android:colorAccent">@color/term_prompt</item>
+        <item name="android:textColorHighlight">@color/term_selection</item>
+    </style>
+</resources>

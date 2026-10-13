@@ -1,0 +1,82 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The APK carries the CLI, so it takes the CLI's version unless one is passed in
+// (release builds: -PappVersion=1.2.0 from the git tag)
+def cargoVersion = (rootProject.file('../Cargo.toml').text =~ /(?m)^version\s*=\s*"([^"]+)"/)[0][1]
+def appVersion = (findProperty('appVersion') ?: cargoVersion).toString()
+// 1.2.3[-rc1] -> 1002003: increases with every release, as Android requires
+def versionParts = (appVersion.replaceFirst(/-.*/, '').tokenize('.') + ['0', '0', '0'])
+        .take(3).collect { it as int }
+def appVersionCode = versionParts[0] * 1000000 + versionParts[1] * 1000 + versionParts[2]
+
+// Release signing key, given to CI as secrets; without one the release APK is
+// signed with the debug key (fine for trying out, but updates then need a reinstall)
+def keystore = System.getenv('ANDROID_KEYSTORE')
+
+android {
+    namespace = 'local.qwentranslate'
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = 'local.qwentranslate'
+        // The bundled translate binary is built for API 24
+        minSdk = 24
+        targetSdk = 35
+        versionCode = Math.max(appVersionCode, 1)
+        versionName = appVersion
+    }
+
+    signingConfigs {
+        release {
+            if (keystore) {
+                storeFile = file(keystore)
+                storePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias = System.getenv('ANDROID_KEY_ALIAS') ?: 'qwen-translate'
+                keyPassword = System.getenv('ANDROID_KEY_PASSWORD') ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = keystore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    packaging {
+        jniLibs {
+            // The translate binary ships as jniLibs/<abi>/libtranslate.so: Android only
+            // lets apps execute files from their native library directory, and only
+            // extracts libraries there with legacy packaging
+            useLegacyPackaging = true
+            // Already stripped by scripts/build-android-app.sh
+            keepDebugSymbols += '**/libtranslate.so'
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
+
+// A release APK without the binary would install fine and then fail on every command
+tasks.matching { it.name == 'packageRelease' }.configureEach {
+    doFirst {
+        def libs = fileTree('src/main/jniLibs') { include '*/libtranslate.so' }
+        if (libs.isEmpty()) {
+            throw new GradleException(
+                    'No translate binary in app/src/main/jniLibs; build with scripts/build-android-app.sh')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="term_bg">#000000</color>
+    <color name="term_fg">#E6E6E6</color>
+    <color name="term_prompt">#5FD75F</color>
+    <color name="term_stderr">#8A8A8A</color>
+    <color name="term_info">#5FAFD7</color>
+    <color name="term_error">#FF6B6B</color>
+    <color name="term_hint">#666666</color>
+    <color name="term_selection">#665FAFD7</color>
+    <color name="keys_bg">#1A1A1A</color>
+    <color name="icon_bg">#1B2B34</color>
+    <color name="icon_fg">#5FD75F</color>
+</resources>

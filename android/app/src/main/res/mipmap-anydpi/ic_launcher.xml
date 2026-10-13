@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7 (no adaptive icons): the same prompt on a rounded square -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/icon_bg"
+        android:pathData="M24,6 L84,6 Q102,6 102,24 L102,84 Q102,102 84,102 L24,102 Q6,102 6,84 L6,24 Q6,6 24,6 Z" />
+    <path
+        android:pathData="M36,38 L52,54 L36,70"
+        android:strokeColor="@color/icon_fg"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M58,70 L74,70"
+        android:strokeColor="@color/icon_fg"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+</vector>
