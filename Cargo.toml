@@ -27,6 +27,12 @@ llama-cpp-2 = { version = "0.1", default-features = false, features = ["openmp"]
 # ship neither libc++_shared.so nor libomp.so; the binary then runs as-is (Termux, adb)
 [target.'cfg(target_os = "android")'.dependencies]
 llama-cpp-2 = { version = "0.1", default-features = false, features = ["android-static-stdcxx"] }
+# Stock Android has no curl (only Termux does): model downloads go over this HTTPS client
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+
+[dev-dependencies]
+# Lets the Android downloader's tests run on the build host
+ureq = { version = "3", default-features = false, features = ["rustls"] }
 
 [features]
 default = ["mtmd"]

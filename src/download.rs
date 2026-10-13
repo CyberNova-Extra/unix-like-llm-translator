@@ -1,9 +1,13 @@
 use std::fs::{File, TryLockError};
 use std::path::Path;
+#[cfg(not(target_os = "android"))]
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
+
+#[cfg(any(target_os = "android", test))]
+mod https;
 
 /// A model variant: text model + its matching mmproj projector weights
 pub struct ModelVariant {
@@ -63,7 +67,7 @@ impl ModelSource {
     }
 }
 
-/// Download the model via the system curl.
+/// Download the model (via the system curl; in-process HTTPS on Android).
 pub fn download_model(v: &ModelVariant, dest: &Path, source: ModelSource) -> Result<()> {
     download_file(dest, source, v.repo, v.model_file)
 }
@@ -100,13 +104,7 @@ fn download_file(dest: &Path, source: ModelSource, repo: &str, file: &str) -> Re
     let mut tried = Vec::new();
     for url in source.urls(repo, file) {
         eprintln!("Downloading: {url}");
-        let mut status = curl(&tmp, &url, true)?;
-        // curl exit 33: server ignores Range; start over from scratch
-        if status.code() == Some(33) {
-            let _ = std::fs::remove_file(&tmp);
-            status = curl(&tmp, &url, false)?;
-        }
-        if status.success() {
+        if fetch(&tmp, &url)? {
             std::fs::rename(&tmp, dest)?;
             eprintln!("Downloaded: {}", dest.display());
             return Ok(());
@@ -133,8 +131,27 @@ fn discard_stale(tmp: &Path) {
     }
 }
 
+/// Download `url` into `out`, resuming a partial file; whether it completed
+#[cfg(not(target_os = "android"))]
+fn fetch(out: &Path, url: &str) -> Result<bool> {
+    let mut status = curl(out, url, true)?;
+    // curl exit 33: server ignores Range; start over from scratch
+    if status.code() == Some(33) {
+        let _ = std::fs::remove_file(out);
+        status = curl(out, url, false)?;
+    }
+    Ok(status.success())
+}
+
+/// Stock Android has no curl (only Termux does), so download in-process there
+#[cfg(target_os = "android")]
+fn fetch(out: &Path, url: &str) -> Result<bool> {
+    https::fetch(out, url)
+}
+
 /// Run the system curl (progress bar on stderr, stdout stays clean). Transient
 /// network errors are retried, and an existing partial file is resumed.
+#[cfg(not(target_os = "android"))]
 fn curl(out: &Path, url: &str, resume: bool) -> Result<std::process::ExitStatus> {
     let mut cmd = Command::new("curl");
     cmd.args(["-fL", "--connect-timeout", "15"])

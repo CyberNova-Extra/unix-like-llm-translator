@@ -49,7 +49,6 @@ Windows：解压 zip 后运行 `powershell -ExecutionPolicy Bypass -File scripts
 CLI 可在 Android（aarch64）的 [Termux](https://termux.dev) 中运行，使用 Release 中的 `android-aarch64` 资产：
 
 ```bash
-pkg install curl                                      # 自动下载模型需要 curl
 tar xf qwen-translate-*-android-aarch64.tar.xz
 bash qwen-translate-*-android-aarch64/scripts/install.sh   # 安装到 $PREFIX/bin
 translate "I love programming"
@@ -57,6 +56,7 @@ termux-clipboard-get | translate | termux-clipboard-set   # 翻译剪贴板（�
 ```
 
 - 仅 CPU 推理。默认使用一半核心（常见大小核 SoC 上即大核），可用 `--threads` 调整。
+- Android 版用内置的 HTTPS 客户端下载模型（支持断点续传和重试），无需 curl，在 `adb shell` 中也能用。支持 `HTTPS_PROXY`/`NO_PROXY` 代理设置；设置 `SSL_CERT_FILE` 时以其中的根证书替代内置根证书。
 - 默认 2B 模型约需 2GB 空闲内存，内存较小的手机可用 `--fast`（0.8B，约 1GB）。
 - 浏览器扩展仅限桌面端：移动端浏览器不支持 Native Messaging。
 

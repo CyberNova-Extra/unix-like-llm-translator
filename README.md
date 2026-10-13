@@ -49,7 +49,6 @@ On Windows, extract the zip and run `powershell -ExecutionPolicy Bypass -File sc
 The CLI runs on Android (aarch64) inside [Termux](https://termux.dev), using the `android-aarch64` release asset:
 
 ```bash
-pkg install curl                                      # for the model auto-download
 tar xf qwen-translate-*-android-aarch64.tar.xz
 bash qwen-translate-*-android-aarch64/scripts/install.sh   # installs to $PREFIX/bin
 translate "I love programming"
@@ -57,6 +56,7 @@ termux-clipboard-get | translate | termux-clipboard-set   # translate the clipbo
 ```
 
 - CPU only. By default half of the cores are used (the big cores on typical big.LITTLE SoCs); tune with `--threads`.
+- The Android build downloads models over its own HTTPS client (with resume and retries), so no curl is needed and it also works from `adb shell`. It honours `HTTPS_PROXY`/`NO_PROXY`, and `SSL_CERT_FILE` replaces the bundled root certificates.
 - The default 2B model needs about 2 GB of free RAM; on low-memory phones use `--fast` (0.8B, about 1 GB).
 - The browser extensions are desktop-only: mobile browsers don't support native messaging.
 
