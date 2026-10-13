@@ -121,7 +121,7 @@ cargo build --release --target aarch64-linux-android
 
 For newer phones, `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod` speeds up inference considerably, but the binary then no longer runs on older Cortex-A53/A73-class SoCs.
 
-The Android app is built with `scripts/build-android-app.sh` (needs the NDK in `ANDROID_NDK`, the Android SDK in `ANDROID_HOME` and JDK 17+). It cross-compiles `translate` for the ABIs given (`arm64-v8a` by default, `x86_64` for emulators), packs it as the app's native library (`libtranslate.so`: Android only lets apps execute files from their native library directory) next to `libtermux.so` (the pseudo-terminal part of Termux's emulator) and writes `android/app/build/outputs/apk/release/app-release.apk`. The APK is signed with the key in `ANDROID_KEYSTORE` (password `ANDROID_KEYSTORE_PASSWORD`, alias `ANDROID_KEY_ALIAS`, default `qwen-translate`), or else with the debug key.
+The Android app is built with `scripts/build-android-app.sh` (needs the NDK in `ANDROID_NDK`, the Android SDK in `ANDROID_HOME` and JDK 17+). It cross-compiles `translate` for the ABIs given (`arm64-v8a` by default, `x86_64` for emulators), packs it as the app's native library (`libtranslate.so`: Android only lets apps execute files from their native library directory) next to `libtermux.so` (the pseudo-terminal part of Termux's emulator), both linked with 16 KB page alignment for Android 15+ devices, and writes `android/app/build/outputs/apk/release/app-release.apk`. The APK is signed with the key in `ANDROID_KEYSTORE` (password `ANDROID_KEYSTORE_PASSWORD`, alias `ANDROID_KEY_ALIAS`, default `qwen-translate`), or else with the debug key.
 
 ## Usage
 

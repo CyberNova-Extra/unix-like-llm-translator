@@ -121,7 +121,7 @@ cargo build --release --target aarch64-linux-android
 
 较新的手机可加 `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod`，推理明显更快，但生成的二进制无法在 Cortex-A53/A73 一代的老 SoC 上运行。
 
-Android 应用用 `scripts/build-android-app.sh` 构建（需要 `ANDROID_NDK` 指向 NDK、`ANDROID_HOME` 指向 Android SDK，以及 JDK 17+）：按给定 ABI（默认 `arm64-v8a`，模拟器可用 `x86_64`）交叉编译 `translate`，作为应用的原生库 `libtranslate.so` 打包（Android 只允许应用执行原生库目录中的文件），连同 `libtermux.so`（Termux 终端模拟器的伪终端部分），输出 `android/app/build/outputs/apk/release/app-release.apk`。设置了 `ANDROID_KEYSTORE`（密码 `ANDROID_KEYSTORE_PASSWORD`，别名 `ANDROID_KEY_ALIAS`，默认 `qwen-translate`）时用该密钥签名，否则用 debug 密钥。
+Android 应用用 `scripts/build-android-app.sh` 构建（需要 `ANDROID_NDK` 指向 NDK、`ANDROID_HOME` 指向 Android SDK，以及 JDK 17+）：按给定 ABI（默认 `arm64-v8a`，模拟器可用 `x86_64`）交叉编译 `translate`，作为应用的原生库 `libtranslate.so` 打包（Android 只允许应用执行原生库目录中的文件），连同 `libtermux.so`（Termux 终端模拟器的伪终端部分），两者都按 16KB 页对齐链接以支持 Android 15+ 设备，输出 `android/app/build/outputs/apk/release/app-release.apk`。设置了 `ANDROID_KEYSTORE`（密码 `ANDROID_KEYSTORE_PASSWORD`，别名 `ANDROID_KEY_ALIAS`，默认 `qwen-translate`）时用该密钥签名，否则用 debug 密钥。
 
 ## 使用
 

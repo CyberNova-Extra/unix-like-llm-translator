@@ -48,6 +48,9 @@ for abi in "${ABIS[@]}"; do
   export "CARGO_TARGET_${upper}_LINKER=$TC/$target$API-clang"
   # NDK r30+ headers reject unversioned targets, which bindgen passes by default
   export "BINDGEN_EXTRA_CLANG_ARGS_$var=--target=$target$API"
+  # 16 KB page alignment, required on Android 15+ devices with 16 KB pages
+  # (older NDKs align to 4 KB by default)
+  export "CARGO_TARGET_${upper}_RUSTFLAGS=-C link-arg=-Wl,-z,max-page-size=16384"
   echo "==> translate for $abi ($target)"
   ANDROID_NDK="$NDK" ANDROID_API_LEVEL=$API \
     cargo build --release --target "$target" --manifest-path "$ROOT/Cargo.toml"
@@ -55,7 +58,7 @@ for abi in "${ABIS[@]}"; do
   "$TC/llvm-strip" -o "$JNI/$abi/libtranslate.so" "$TARGET_DIR/$target/release/translate"
   # The flags of Termux's own build of it
   "$TC/$target$API-clang" -shared -fPIC -std=c11 -Wall -Wextra -Os -fno-stack-protector \
-    -Wl,--gc-sections \
+    -Wl,--gc-sections -Wl,-z,max-page-size=16384 \
     -o "$JNI/$abi/libtermux.so" "$ROOT/android/terminal-emulator/src/main/jni/termux.c"
   "$TC/llvm-strip" "$JNI/$abi/libtermux.so"
 done
