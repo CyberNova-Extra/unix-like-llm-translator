@@ -3,40 +3,40 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="TypographyDashes">
     <string name="app_name">Qwen 本地翻译</string>
     <string name="process_text_label">Qwen 翻译</string>
-    <string name="input_hint">输入要翻译的文字，或 help</string>
-    <string name="input_hint_running">运行中…可继续输入，^C 停止</string>
-    <plurals name="input_hint_queued">
-        <item quantity="other">%d 条等待中…^C 全部停止</item>
-    </plurals>
 
     <string name="key_image">图片</string>
     <string name="key_paste">粘贴</string>
-    <string name="key_copy">复制</string>
-    <string name="key_clear">清屏</string>
-    <string name="key_help">帮助</string>
 
-    <string name="copied">已复制上一条译文</string>
-    <string name="nothing_to_copy">还没有可复制的译文</string>
     <string name="no_image_picker">没有可用于选择图片的应用</string>
     <string name="image_failed">无法读取图片：%s</string>
 
-    <string name="welcome">"Qwen 本地翻译 · 终端\n输入文字后回车即可翻译；输入 help 查看命令。\n模型在本机运行，下载后可离线使用。\n"</string>
-    <string name="help">"直接输入文字：翻译（中文译为英文，其他语言译为中文）\ntranslate [选项] [文字]：完整命令行，例如\n  translate --to ja 你好\n  translate --fast \"quick test\"（0.8B 快速模型）\n  translate --quality …（4B 高质量模型）\n  translate --image 图片路径（翻译图片中的文字）\n  translate --help（全部选项）\nexport 名称=值 …：设置环境变量，如 TRANSLATE_TO=ja、QWEN_TRANSLATE_MODEL=fast\nunset 名称 … / env：删除 / 列出环境变量\nmodels / models rm 文件名：查看 / 删除已下载的模型\nclear：清屏；exit：关闭\n按键：^C 停止当前命令，↑ ↓ 翻阅历史，图片 = 选一张图片翻译，复制 = 复制上一条译文；双指缩放字号。\n在其他应用中：选中文字后点「Qwen 翻译」，或把文字、图片分享到本应用。\n首次使用时自动下载模型：默认 2B 约 1.3GB，--fast 约 0.5GB，--quality 约 2.7GB；翻译图片另需约 0.2–0.7GB。模型保留到卸载应用为止。\n"</string>
+    <string name="notification_channel">会话</string>
+    <plurals name="notification_sessions">
+        <item quantity="other">%d 个会话</item>
+    </plurals>
+    <string name="notification_wake_lock_held">（已保持唤醒）</string>
+    <string name="notification_exit">退出</string>
+    <string name="notification_acquire_wake_lock">保持唤醒</string>
+    <string name="notification_release_wake_lock">取消唤醒</string>
 
-    <string name="notification_channel">运行中的命令</string>
-    <string name="notification_running">正在运行</string>
-    <string name="notification_stop">停止</string>
+    <string name="motd">"
+Qwen 本地翻译 · 终端
 
-    <string name="binary_missing">APK 中缺少 translate 程序（%s），请用 scripts/build-android-app.sh 构建</string>
-    <string name="start_failed">无法启动 translate：%s</string>
-    <string name="exit_code">[退出码 %d]</string>
-    <string name="killed">[被系统终止] Android 可能会终止在后台占用大量 CPU 或内存的任务；请让应用保持在前台（内存较小的手机可加 --fast）后重新运行。</string>
+在 translate 的 > 提示符后输入文字、回车即翻译。
+^D 退出到 shell，在 shell 中输入 translate 重新进入；
+translate --help 查看全部选项，例如：
+  translate --to ja 你好
+  translate --image 图片.png
 
-    <string name="models_none">尚未下载任何模型（首次使用时自动下载）</string>
-    <string name="models_partial">"（未完成）"</string>
-    <string name="models_where">目录：%1$s\n可用空间：%2$s</string>
-    <string name="models_not_found">没有这个模型文件：%s</string>
-    <string name="models_removed">已删除 %s</string>
-    <string name="models_not_removed">无法删除 %s</string>
-    <string name="env_empty">没有设置环境变量</string>
+在其他应用中：选中文字后点「Qwen 翻译」，
+或把文字、图片分享到本应用。
+
+首次使用时自动下载模型（默认 2B，1.3GB）。
+内存较小的手机可改用 0.8B（0.5GB）：
+  echo 'export QWEN_TRANSLATE_MODEL=fast' >> ~/.mkshrc
+
+快捷键：ESC ^C ^D TAB 方向键、图片、粘贴；
+最后一个键切换会话（长按新建 shell）。
+
+"</string>
 </resources>

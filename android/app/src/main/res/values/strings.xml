@@ -3,45 +3,53 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="TypographyDashes">
     <string name="app_name">Qwen Translate</string>
     <string name="process_text_label">Qwen Translate</string>
-    <string name="input_hint">Type text to translate, or help</string>
-    <string name="input_hint_running">Running… type ahead, ^C to stop</string>
-    <plurals name="input_hint_queued">
-        <item quantity="one">%d waiting… ^C stops everything</item>
-        <item quantity="other">%d waiting… ^C stops everything</item>
-    </plurals>
 
-    <string name="prompt" translatable="false">$</string>
+    <string name="key_esc" translatable="false">ESC</string>
     <string name="key_interrupt" translatable="false">^C</string>
+    <string name="key_eof" translatable="false">^D</string>
+    <string name="key_tab" translatable="false">TAB</string>
     <string name="key_up" translatable="false">↑</string>
     <string name="key_down" translatable="false">↓</string>
+    <string name="key_left" translatable="false">←</string>
+    <string name="key_right" translatable="false">→</string>
     <string name="key_image">IMAGE</string>
     <string name="key_paste">PASTE</string>
-    <string name="key_copy">COPY</string>
-    <string name="key_clear">CLEAR</string>
-    <string name="key_help">HELP</string>
+    <!-- Current session / number of sessions -->
+    <string name="key_session" translatable="false">%1$d/%2$d</string>
 
-    <string name="copied">Copied the last translation</string>
-    <string name="nothing_to_copy">No translation to copy yet</string>
     <string name="no_image_picker">No app to pick images with</string>
     <string name="image_failed">Could not read the image: %s</string>
 
-    <string name="welcome">"Qwen Translate · terminal\nType text and press Enter to translate it; type help for commands.\nThe model runs on this device and works offline once downloaded.\n"</string>
-    <string name="help">"Type any text: translate it (Chinese → English, other languages → Chinese)\ntranslate [options] [text]: the full command line, e.g.\n  translate --to ja hello\n  translate --fast \"quick test\"   (0.8B fast model)\n  translate --quality …   (4B high-quality model)\n  translate --image PATH   (translate the text in an image)\n  translate --help   (all options)\nexport NAME=VALUE …: set environment variables, e.g. TRANSLATE_TO=ja or QWEN_TRANSLATE_MODEL=fast\nunset NAME … / env: remove / list them\nmodels / models rm FILE: list / delete downloaded models\nclear: clear the screen; exit: close\nKeys: ^C stops the running command, ↑ ↓ browse the history, IMAGE picks a picture to translate, COPY copies the last translation; pinch to zoom.\nIn other apps: select text and choose Qwen Translate, or share text or an image to this app.\nModels download on first use: 2B (default) 1.3 GB, --fast 0.5 GB, --quality 2.7 GB; images need another 0.2–0.7 GB. They are kept until the app is uninstalled.\n"</string>
+    <string name="notification_channel">Sessions</string>
+    <plurals name="notification_sessions">
+        <item quantity="one">%d session</item>
+        <item quantity="other">%d sessions</item>
+    </plurals>
+    <string name="notification_wake_lock_held">" (wake lock held)"</string>
+    <string name="notification_exit">Exit</string>
+    <string name="notification_acquire_wake_lock">Acquire wake lock</string>
+    <string name="notification_release_wake_lock">Release wake lock</string>
 
-    <string name="notification_channel">Running commands</string>
-    <string name="notification_running">Running</string>
-    <string name="notification_stop">Stop</string>
+    <!-- Shown when a session starts; lines kept short for phone screens -->
+    <string name="motd">"
+Qwen Translate · terminal
 
-    <string name="binary_missing">The translate program is missing from this APK (%s); build it with scripts/build-android-app.sh</string>
-    <string name="start_failed">Could not start translate: %s</string>
-    <string name="exit_code">[exit code %d]</string>
-    <string name="killed">[killed by the system] Android may stop background work that uses a lot of CPU or memory; keep the app in the foreground, or use --fast on low-memory phones, and run the command again.</string>
+At translate's > prompt, type text and press
+Enter to translate it. ^D leaves for the shell,
+where translate starts it again;
+translate --help lists the options, e.g.
+  translate --to ja 你好
+  translate --image picture.png
 
-    <string name="models_none">No models downloaded yet (they download on first use)</string>
-    <string name="models_partial">" (incomplete)"</string>
-    <string name="models_where">Directory: %1$s\nFree space: %2$s</string>
-    <string name="models_not_found">No such model file: %s</string>
-    <string name="models_removed">Removed %s</string>
-    <string name="models_not_removed">Could not remove %s</string>
-    <string name="env_empty">No exported variables</string>
+In other apps: select text and choose Qwen
+Translate, or share text or an image here.
+
+The model downloads on first use (2B, 1.3 GB).
+On phones with little memory, use 0.8B (0.5 GB):
+  echo 'export QWEN_TRANSLATE_MODEL=fast' >> ~/.mkshrc
+
+Keys: ESC ^C ^D TAB arrows, IMAGE, PASTE; the
+last one switches sessions (long press: new shell).
+
+"</string>
 </resources>

@@ -3,7 +3,8 @@
 #
 # Cross-compiles translate for each ABI and places it in the app as
 # jniLibs/<abi>/libtranslate.so (Android only lets apps execute files from their
-# native library directory), then runs Gradle.
+# native library directory), next to libtermux.so (the pseudo-terminal part of
+# Termux's terminal emulator, android/terminal-emulator), then runs Gradle.
 #
 # Usage: scripts/build-android-app.sh [abi ...]      ABIs: arm64-v8a (default), x86_64
 # Needs: the NDK (ANDROID_NDK), the Android SDK (ANDROID_HOME), JDK 17+, and the
@@ -52,6 +53,11 @@ for abi in "${ABIS[@]}"; do
     cargo build --release --target "$target" --manifest-path "$ROOT/Cargo.toml"
   mkdir -p "$JNI/$abi"
   "$TC/llvm-strip" -o "$JNI/$abi/libtranslate.so" "$TARGET_DIR/$target/release/translate"
+  # The flags of Termux's own build of it
+  "$TC/$target$API-clang" -shared -fPIC -std=c11 -Wall -Wextra -Os -fno-stack-protector \
+    -Wl,--gc-sections \
+    -o "$JNI/$abi/libtermux.so" "$ROOT/android/terminal-emulator/src/main/jni/termux.c"
+  "$TC/llvm-strip" "$JNI/$abi/libtermux.so"
 done
 
 echo "==> APK"

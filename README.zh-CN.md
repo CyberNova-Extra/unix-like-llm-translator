@@ -48,13 +48,13 @@ Windows：解压 zip 后运行 `powershell -ExecutionPolicy Bypass -File scripts
 
 ### Android 应用
 
-`qwen-translate-*-android.apk` 是独立的 Android 应用（Android 7+，arm64），界面是 Termux 风格的终端，自带 `translate`，无需安装 Termux：
+`qwen-translate-*-android.apk` 是独立的 Android 应用（Android 7+，arm64），终端部分直接采用 [Termux](https://termux.dev) 的终端模拟器与终端视图（`android/terminal-*`），自带 `translate`，无需安装 Termux：
 
-- 输入文字后回车即翻译；也可运行带任意选项的 `translate`（`translate --to ja 你好`、`translate --fast …`、`translate --help`）。`help` 列出内置命令：`export` / `unset` / `env` 管理环境变量（如 `TRANSLATE_TO=ja`、`QWEN_TRANSLATE_MODEL=fast`，重启后保留），`models` / `models rm 文件名` 查看和删除已下载的模型，`clear`、`exit`。命令运行时输入的内容会像 shell 一样排队等待。
-- 在任意应用中选中文字后，点选择菜单里的 **Qwen 翻译**；也可把文字或图片分享到本应用；「图片」键用于选一张图片翻译其中的文字。
-- 快捷键行：^C（停止）、↑ ↓（历史）、图片、粘贴、复制（上一条译文）、清屏、帮助；双指缩放字号。
-- 首次使用时自动下载模型（支持续传）到应用私有目录：默认 2B（1.3GB），内存较小的手机可 `export QWEN_TRANSLATE_MODEL=fast` 改用 0.8B（0.5GB）。卸载应用时模型一并删除。
-- 命令运行期间会显示带「停止」按钮的通知，切到后台也能继续运行。但 Android 12+ 仍可能终止在后台占用大量 CPU 的进程，发生时应用会给出提示；长文本翻译请保持应用在前台。
+- 打开即进入 `translate` 的交互模式：输入文字、回车即翻译，模型只加载一次。^D 退出到 shell（Android 自带的 `/system/bin/sh`，`translate` 已在 `PATH` 中），命令、管道、选项与在其他终端中一样：`translate --to ja 你好`、`echo hi | translate`、`translate --help`。`models` 列出已下载的模型；`export QWEN_TRANSLATE_MODEL=fast` 之类的设置写进 `~/.mkshrc`。
+- 在任意应用中选中文字后，点选择菜单里的 **Qwen 翻译**；也可把文字或图片分享到本应用：各在单独的会话中运行，完成后按回车关闭。「图片」键用于选一张图片翻译。
+- 快捷键行：ESC、^C、^D、TAB、方向键、图片、粘贴；最后一个键显示并切换会话（长按新建 shell）。双指缩放字号，长按选择并复制文字。
+- 首次使用时自动下载模型（支持续传）到应用私有目录：默认 2B（1.3GB），内存较小的手机可用 `QWEN_TRANSLATE_MODEL=fast` 改用 0.8B（0.5GB）。卸载应用时模型一并删除。
+- 与 Termux 一样，通知栏常驻通知让会话在后台继续运行，还可从通知中保持唤醒（锁屏时长时间下载）或退出全部会话。Android 12+ 仍可能终止在后台占用大量 CPU 的进程（显示 `[Process completed (signal 9)]`），长文本翻译请保持应用在前台。
 
 ### Android（Termux）
 
@@ -121,7 +121,7 @@ cargo build --release --target aarch64-linux-android
 
 较新的手机可加 `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod`，推理明显更快，但生成的二进制无法在 Cortex-A53/A73 一代的老 SoC 上运行。
 
-Android 应用用 `scripts/build-android-app.sh` 构建（需要 `ANDROID_NDK` 指向 NDK、`ANDROID_HOME` 指向 Android SDK，以及 JDK 17+）：按给定 ABI（默认 `arm64-v8a`，模拟器可用 `x86_64`）交叉编译 `translate`，作为应用的原生库 `libtranslate.so` 打包（Android 只允许应用执行原生库目录中的文件），输出 `android/app/build/outputs/apk/release/app-release.apk`。设置了 `ANDROID_KEYSTORE`（密码 `ANDROID_KEYSTORE_PASSWORD`，别名 `ANDROID_KEY_ALIAS`，默认 `qwen-translate`）时用该密钥签名，否则用 debug 密钥。
+Android 应用用 `scripts/build-android-app.sh` 构建（需要 `ANDROID_NDK` 指向 NDK、`ANDROID_HOME` 指向 Android SDK，以及 JDK 17+）：按给定 ABI（默认 `arm64-v8a`，模拟器可用 `x86_64`）交叉编译 `translate`，作为应用的原生库 `libtranslate.so` 打包（Android 只允许应用执行原生库目录中的文件），连同 `libtermux.so`（Termux 终端模拟器的伪终端部分），输出 `android/app/build/outputs/apk/release/app-release.apk`。设置了 `ANDROID_KEYSTORE`（密码 `ANDROID_KEYSTORE_PASSWORD`，别名 `ANDROID_KEY_ALIAS`，默认 `qwen-translate`）时用该密钥签名，否则用 debug 密钥。
 
 ## 使用
 

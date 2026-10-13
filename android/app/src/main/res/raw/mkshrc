@@ -1,0 +1,24 @@
+# Interactive shell setup of the Qwen Translate app, read by mksh (Android's
+# /system/bin/sh) through $ENV. The app rewrites this file on every start: put
+# your own settings, e.g. export QWEN_TRANSLATE_MODEL=fast, in ~/.mkshrc.
+
+set -U                          # UTF-8 line editing (CJK input)
+set -o emacs                    # arrow keys: history and cursor
+HISTFILE=$HOME/.mksh_history
+HISTSIZE=1000
+PS1='${PWD/#$HOME/\~} $ '
+
+# Once per session, not in nested shells
+if [ -z "$QWEN_TRANSLATE_MOTD" ]; then
+	export QWEN_TRANSLATE_MOTD=1
+	cat "$PREFIX/etc/motd"
+fi
+
+# $PREFIX/bin/translate links to the binary; should the link be missing
+command -v translate >/dev/null || alias translate='"$QWEN_TRANSLATE_BIN"'
+
+models() {
+	ls -l "${XDG_DATA_HOME:-$HOME/.local/share}/qwen-translate"
+}
+
+[ -r "$HOME/.mkshrc" ] && . "$HOME/.mkshrc"

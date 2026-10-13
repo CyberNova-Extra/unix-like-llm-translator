@@ -57,22 +57,24 @@ android {
             // extracts libraries there with legacy packaging
             useLegacyPackaging = true
             // Already stripped by scripts/build-android-app.sh
-            keepDebugSymbols += '**/libtranslate.so'
+            keepDebugSymbols += ['**/libtranslate.so', '**/libtermux.so']
         }
     }
 }
 
 dependencies {
+    implementation project(':terminal-view')
     testImplementation 'junit:junit:4.13.2'
 }
 
-// A release APK without the binary would install fine and then fail on every command
+// A release APK without the native parts would install fine and then fail to start
 tasks.matching { it.name == 'packageRelease' }.configureEach {
     doFirst {
-        def libs = fileTree('src/main/jniLibs') { include '*/libtranslate.so' }
-        if (libs.isEmpty()) {
-            throw new GradleException(
-                    'No translate binary in app/src/main/jniLibs; build with scripts/build-android-app.sh')
+        ['libtranslate.so', 'libtermux.so'].each { lib ->
+            if (fileTree('src/main/jniLibs') { include "*/$lib" }.isEmpty()) {
+                throw new GradleException(
+                        "No $lib in app/src/main/jniLibs; build with scripts/build-android-app.sh")
+            }
         }
     }
 }

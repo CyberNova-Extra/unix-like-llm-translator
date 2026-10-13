@@ -48,13 +48,13 @@ On Windows, extract the zip and run `powershell -ExecutionPolicy Bypass -File sc
 
 ### Android app
 
-`qwen-translate-*-android.apk` is a standalone app (Android 7+, arm64) with a Termux-style terminal. It carries `translate` itself, so Termux isn't needed:
+`qwen-translate-*-android.apk` is a standalone app (Android 7+, arm64) whose terminal is built from [Termux](https://termux.dev)'s terminal emulator and view (`android/terminal-*`). It carries `translate`, so Termux itself isn't needed:
 
-- Type text and press Enter to translate it, or run `translate` with any option (`translate --to ja 你好`, `translate --fast …`, `translate --help`). `help` lists the built-in commands: `export` / `unset` / `env` for environment variables such as `TRANSLATE_TO=ja` or `QWEN_TRANSLATE_MODEL=fast` (kept across launches), `models` / `models rm FILE` for the downloaded models, `clear` and `exit`. Input typed while a command runs waits for it, as in a shell.
-- In any app, select text and choose **Qwen 翻译** / **Qwen Translate** in the selection menu, or share text or an image to the app; the IMAGE key picks a picture whose text to translate.
-- The key row has ^C (stop), ↑ ↓ (history), IMAGE, PASTE, COPY (the last translation), CLEAR and HELP; pinch to zoom the text.
-- Models download on first use (resumable) into the app's private storage: 2B (1.3 GB) by default, or `export QWEN_TRANSLATE_MODEL=fast` for the 0.8B model (0.5 GB) on phones with little RAM. Uninstalling the app removes them.
-- While a command runs, a notification with a Stop button keeps it going in the background. Android 12+ may still kill background processes that use a lot of CPU; the app says so when it happens. Keep it in the foreground for long translations.
+- It opens in `translate`'s interactive mode: type text and press Enter to translate it, with the model loaded once. ^D leaves for the shell (Android's `/system/bin/sh`, with `translate` on the `PATH`), where commands, pipes and options work as anywhere: `translate --to ja 你好`, `echo hi | translate`, `translate --help`. `models` lists the downloaded models; settings such as `export QWEN_TRANSLATE_MODEL=fast` go in `~/.mkshrc`.
+- In any app, select text and choose **Qwen 翻译** / **Qwen Translate** in the selection menu, or share text or an image to the app: each runs in a session of its own, closed with Enter once done. The IMAGE key picks a picture to translate.
+- The key row has ESC, ^C, ^D, TAB, the arrow keys, IMAGE and PASTE; the last key shows and switches sessions (long press: a new shell). Pinch to zoom; long press to select and copy text.
+- Models download on first use (resumable) into the app's private storage: 2B (1.3 GB) by default, or 0.8B (0.5 GB) with `QWEN_TRANSLATE_MODEL=fast` on phones with little memory. Uninstalling the app removes them.
+- As in Termux, a notification keeps the sessions alive in the background; it can also hold a wake lock (for a long download with the screen off) and exit all sessions. Android 12+ may still kill background processes that use a lot of CPU (`[Process completed (signal 9)]`); keep the app in the foreground for long translations.
 
 ### Android (Termux)
 
@@ -121,7 +121,7 @@ cargo build --release --target aarch64-linux-android
 
 For newer phones, `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod` speeds up inference considerably, but the binary then no longer runs on older Cortex-A53/A73-class SoCs.
 
-The Android app is built with `scripts/build-android-app.sh` (needs the NDK in `ANDROID_NDK`, the Android SDK in `ANDROID_HOME` and JDK 17+). It cross-compiles `translate` for the ABIs given (`arm64-v8a` by default, `x86_64` for emulators), packs it as the app's native library (`libtranslate.so`: Android only lets apps execute files from their native library directory) and writes `android/app/build/outputs/apk/release/app-release.apk`. The APK is signed with the key in `ANDROID_KEYSTORE` (password `ANDROID_KEYSTORE_PASSWORD`, alias `ANDROID_KEY_ALIAS`, default `qwen-translate`), or else with the debug key.
+The Android app is built with `scripts/build-android-app.sh` (needs the NDK in `ANDROID_NDK`, the Android SDK in `ANDROID_HOME` and JDK 17+). It cross-compiles `translate` for the ABIs given (`arm64-v8a` by default, `x86_64` for emulators), packs it as the app's native library (`libtranslate.so`: Android only lets apps execute files from their native library directory) next to `libtermux.so` (the pseudo-terminal part of Termux's emulator) and writes `android/app/build/outputs/apk/release/app-release.apk`. The APK is signed with the key in `ANDROID_KEYSTORE` (password `ANDROID_KEYSTORE_PASSWORD`, alias `ANDROID_KEY_ALIAS`, default `qwen-translate`), or else with the debug key.
 
 ## Usage
 
