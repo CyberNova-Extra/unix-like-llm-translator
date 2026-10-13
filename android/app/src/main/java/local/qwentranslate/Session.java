@@ -179,8 +179,8 @@ final class Session {
             try {
                 File image = Images.importImage(app, uri);
                 main.post(() -> run(Arrays.asList("--image", image.getPath())));
-            } catch (IOException | RuntimeException e) {
-                main.post(() -> error(app.getString(R.string.image_failed, e.getMessage())));
+            } catch (IOException | RuntimeException | OutOfMemoryError e) {
+                main.post(() -> error(app.getString(R.string.image_failed, String.valueOf(e.getMessage()))));
             }
         }, "image-import").start();
     }
