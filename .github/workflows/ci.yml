@@ -94,18 +94,31 @@ jobs:
         with:
           key: android
 
-      - name: Cross-compile (aarch64-linux-android, API 24)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the app (cross-compiles translate for aarch64-linux-android, API 24)
         run: |
-          export ANDROID_NDK="$ANDROID_NDK_LATEST_HOME" ANDROID_API_LEVEL=24
-          TC="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          export CC_aarch64_linux_android="$TC/aarch64-linux-android24-clang"
-          export CXX_aarch64_linux_android="$TC/aarch64-linux-android24-clang++"
-          export AR_aarch64_linux_android="$TC/llvm-ar"
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$TC/aarch64-linux-android24-clang"
-          cargo build --release --target aarch64-linux-android
+          export ANDROID_NDK="$ANDROID_NDK_LATEST_HOME"
+          scripts/build-android-app.sh arm64-v8a
           # Must run on a stock device: no libc++_shared.so / libomp.so dependency
+          TC="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
           "$TC/llvm-readelf" -d target/aarch64-linux-android/release/translate | tee needed.txt
           ! grep -E "libc\+\+_shared|libomp" needed.txt
+
+      - name: App lint and unit tests
+        working-directory: android
+        run: ./gradlew --no-daemon lintDebug testDebugUnitTest
+
+      # Signed with the runner's debug key: for trying out a change, not for updates
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
 
   extension:
     runs-on: ubuntu-latest

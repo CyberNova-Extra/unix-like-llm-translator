@@ -184,6 +184,37 @@ jobs:
           sha256sum "$PKG.tar.xz" "$PKG-with-model.tar.xz" > "$PKG-sha256sums.txt"
           ls -lh
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the app (APK)
+        env:
+          # Release signing key (keytool keystore, base64) and its password; updates
+          # of an installed app must be signed with the same key
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          export ANDROID_NDK="$ANDROID_NDK_LATEST_HOME"
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            (umask 077 && printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks")
+            export ANDROID_KEYSTORE="$RUNNER_TEMP/release.jks"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 secret is not set; the APK is signed with a throwaway debug key, so later versions can't be installed over it"
+          fi
+          APP_VERSION="${GITHUB_REF_NAME#v}" scripts/build-android-app.sh arm64-v8a
+          rm -f "$RUNNER_TEMP/release.jks"
+          APK="qwen-translate-${GITHUB_REF_NAME}-android.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/$APK"
+          cd dist
+          sha256sum "$APK" >> "qwen-translate-${GITHUB_REF_NAME}-android-aarch64-sha256sums.txt"
+          ls -lh
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-android-aarch64
