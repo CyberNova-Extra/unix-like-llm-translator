@@ -23,6 +23,8 @@ const FIREFOX_ADDON_ID: &str = "qwen-translate@local";
 #[derive(Parser)]
 #[command(
     name = "translate",
+    // Not argv[0]: the Android app runs the binary as libtranslate.so
+    bin_name = "translate",
     version,
     disable_help_flag = true,
     about = "Local offline translation with Qwen3.5 (text and images)",
