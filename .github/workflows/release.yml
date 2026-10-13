@@ -40,6 +40,8 @@ jobs:
         run: |
           echo "RUSTFLAGS=-C target-feature=+crt-static" >> "$GITHUB_ENV"
           echo "LLAMA_STATIC_CRT=1" >> "$GITHUB_ENV"
+          # llama.cpp's CMake takes the runtime from CMAKE_MSVC_RUNTIME_LIBRARY (see the file)
+          echo "CMAKE_TOOLCHAIN_FILE=$(cygpath -m "$PWD/scripts/msvc-static-crt.cmake")" >> "$GITHUB_ENV"
 
       - uses: Swatinem/rust-cache@v2
 
